@@ -1,0 +1,386 @@
+#! /usr/bin/env bash
+
+# Author: Thomas DEBESSE <dev@illwieckz.net>
+# License: ISC
+
+set -e
+
+program_name="$(basename "${0}")"
+first_header='true'
+
+printHelp () {
+	sed -e 's/\\t/\t/' <<-EOF
+	${program_name}: sync all git modules to same reference when possible
+
+	Usage: ${program_name} [OPTION|NAME] …
+
+	Options:
+	\t--help                print this help
+	\t--print               print current modules references
+	\t--revert              revert submodules to registered references
+	\t--detect-branch       checkout branch for current module if detect branch for current commit 
+	\t--detect-tag          checkout tag for current module if detect tag for current commit 
+	\t--branch              checkout submodules whith current branch name
+	\t--branch-has=PATTERN  checkout submodules whith current branch name if name contains PATTERN
+	\t--tag                 checkout submodules whith current tag name
+	\t--tag-has=PATTERN     checkout submodules whith current tag name if name contains PATTERN
+	\t--only-sub=NAME       checkout submodules with this reference name
+	\t--only-sub=NAME:has=PATTERN
+	\t                      checkout submodules with this reference name if name contains PATTERN
+
+	Names:
+	\tNAME                  checkout module and submodules with this reference NAME
+	\t:NAME                 checkout modules and submodules with this reference NAME but ignore
+	\t                      current module if reference NAME does not exist in current module
+	EOF
+
+	exit
+}
+
+getCommitId () {
+	git rev-parse --verify HEAD
+}
+
+getBranchName () {
+	local branch_name="$(git rev-parse --abbrev-ref HEAD)"
+
+	if [ "${branch_name}" = 'HEAD' ]
+	then
+		local guessed_name="$(git name-rev --name-only HEAD)"
+		if [ "${guessed_name}" = 'undefined' ]
+		then
+			printf 'HEAD\n'
+		elif printf "${guessed_name}" | egrep -q '^tags/|~|\^'
+		then
+			printf 'HEAD\n'
+		else
+			printf '%s\n' "${guessed_name}"
+		fi
+	else
+		printf '%s\n' "${branch_name}"
+	fi
+}
+
+getTagName () {
+	local tag_name="$(git name-rev --tags --name-only HEAD)"
+
+	if printf "${tag_name}" | egrep -q '~|\^'
+	then
+		printf 'undefined\n'
+	else
+		printf '%s\n' "${tag_name}"
+	fi
+}
+
+listModules () {
+	git config --file .gitmodules --get-regexp path | awk '{ print $2 }'
+}
+
+walkModules () {
+	local action_name="${1}"; shift
+	local parent_path="${1}"; shift
+	local repo_path="${1}"; shift
+	local reference_name="${1}"; shift
+
+	cd "${parent_path}/${repo_path}"
+
+	case "${action_name}" in
+		'print')
+			printf '%s %s %s %s\n' "${repo_path}" "$(getBranchName)" "$(getTagName)" "$(getCommitId)"
+			;;
+
+		'subcheckout')
+			git submodule update --init --recursive
+			action_name='checkout'
+			;;
+
+		'checkout')
+			git submodule update --init --recursive
+			git checkout "${reference_name}" >/dev/null 2>&1 || true
+			;;
+	esac
+
+	for module_path in $(listModules)
+	do
+		walkModules "${action_name}" "${parent_path}" "${repo_path}/${module_path}" "${reference_name}"
+	done
+}
+
+checkoutModules () {
+	local parent_path="${1}"; shift
+	local repo_path="${1}"; shift
+	local reference_name="${1}"; shift
+
+	walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
+}
+
+checkoutSubmodules () {
+	local parent_path="${1}"; shift
+	local repo_path="${1}"; shift
+	local reference_name="${1}"; shift
+
+	walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
+}
+
+revertModules () {
+	local parent_path="${1}"; shift
+	local repo_path="${1}"; shift
+
+	cd "${parent_path}/${repo_path}"
+	git submodule update --init --recursive
+}
+
+printModules () {
+	local parent_path="${1}"; shift
+	local repo_path="${1}"; shift
+	local reference_name="${1}"; shift
+
+	{
+		printf 'MODULE BRANCH TAG REFERENCE\n'
+		walkModules 'print' "${parent_path}" "${repo_path}" "${reference_name}"
+	} | column -t
+}
+
+getOptionLength () {
+	local option_name="${1}"
+
+	# HACK: '\n' has same length than '='
+	printf -- "${option_name}" | cut -f1 -d'=' | wc -c
+}
+
+testPattern  () {
+	local reference_name="${1}"; shift
+	local pattern_name="${1}"; shift
+
+	printf "${reference_name}" | egrep -q "${pattern_name}"
+}
+
+testReference () {
+	local reference_name="${1}"; shift
+
+	git rev-parse --verify --quiet "${reference_name}" >/dev/null 2>&1
+}
+
+checkBranch () {
+	local reference_name="${1}"; shift
+
+	if [ "${reference_name}" = 'HEAD' ]
+	then
+		errorPrintf 'Detached HEAD'
+		exit 3
+	fi
+}
+
+checkTag () {
+	local reference_name="${1}"; shift
+
+	if [ "${reference_name}" = 'undefined' ]
+	then
+		errorPrintf 'No tag on HEAD'
+		exit 3
+	fi
+}
+
+warningPrintf () {
+	local format_string="${1}"; shift
+	printf 'WARNING: '"${format_string}"'\n' ${@} >&2
+}
+
+errorPrintf () {
+	local format_string="${1}"; shift
+	printf 'ERROR: '"${format_string}"'\n' ${@} >&2
+}
+
+headerPrintf () {
+	local format_string="${1}"; shift
+
+	if ! "${first_header}"
+	then
+		printf '\n' >&2
+	else
+		first_header='false'
+	fi
+
+	printf "${format_string}"'\n' ${@} >&2
+}
+
+parent_path="$(dirname "${PWD}")"
+repo_path="$(basename "${PWD}")"
+branch_name="$(getBranchName)"
+tag_name="$(getTagName)"
+
+keyword_list=''
+while ! [ -z "${1}" ]
+do
+	case "${1}" in
+		'--help'|'-h')
+			printHelp
+			;;
+
+		*)
+			keyword_list+=" ${1}"
+			shift
+			;;
+	esac
+done
+
+for keyword_name in ${keyword_list}
+do
+	case "${keyword_name}" in
+		'--print')
+			headerPrintf 'Print modules references'
+			printModules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--revert')
+			headerPrintf 'Revert modules references'
+			revertModules "${parent_path}" "${repo_path}"
+			;;
+
+		'--detect-branch')
+			reference_name="${branch_name}"
+
+			if [ "${reference_name}" = 'HEAD' ]
+			then
+				errorPrintf "Cannot detect branch name for current commit: '%s'\n" "$(getCommitId)"
+				exit 4
+			fi
+
+			headerPrintf "Checkout detected branch '%s'" "${reference_name}"
+			git checkout "${reference_name}"
+			;;
+
+		'--detect-tag')
+			reference_name="${tag_name}"
+
+			if [ "${reference_name}" = 'HEAD' ]
+			then
+				errorPrintf "Cannot detect tag name for current commit: '%s'\n" "$(getCommitId)"
+				exit 4
+			fi
+
+			headerPrintf "Checkout detected tag '%s'" "${reference_name}"
+			git checkout "${reference_name}"
+			;;
+
+		'--branch')
+			reference_name="${branch_name}"
+
+			checkBranch "${reference_name}"
+
+			headerPrintf "Checkout modules with branch '%s'" "${reference_name}"
+			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--branch-has='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			pattern_name="${keyword_name:${option_length}}"
+			reference_name="${branch_name}"
+
+			if [ -z "${reference_name}" ]
+			then
+				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
+				continue
+			fi
+
+			if ! testPattern "${reference_name}" "${pattern_name}"
+			then
+				warningPrintf "Current branch '%s' in current module does not has pattern: '%s'\n" "${reference_name}" "${pattern_name}"
+				continue
+			fi
+
+			headerPrintf "Checkout modules with branch '%s' because of pattern '%s'" "${reference_name}" "${pattern_name}"
+			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--tag')
+			reference_name="${tag_name}"
+
+			checkTag "${reference_name}"
+
+			headerPrintf "Checkout modules with tag '%s'" "${reference_name}"
+			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--tag-has='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			pattern_name="${keyword_name:${option_length}}"
+			reference_name="${tag_name}"
+
+			if [ -z "${reference_name}" ]
+			then
+				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
+				continue
+			fi
+
+			if ! testPattern "${reference_name}" "${pattern_name}"
+			then
+				warningPrintf "Current tag '%s' in current module does not have pattern: '%s'\n" "${reference_name}" "${pattern_name}"
+				continue
+			fi
+
+			headerPrintf "Checkout modules with tag '%s' because of pattern '%s'" "${reference_name}" "${pattern_name}"
+			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--only-sub='*':has='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			reference_name="$(echo "${keyword_name:${option_length}}" | cut -f1 -d':')"
+			pattern_name="$(echo "${keyword_name:${option_length}}" | cut -f2 -d':')"
+			pattern_name="${pattern_name:4}"
+
+			if [ -z "${reference_name}" ]
+			then
+				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
+				continue
+			fi
+
+			if ! testPattern "${reference_name}" "${pattern_name}"
+			then
+				warningPrintf "Current reference '%s' in current module does not have pattern: '%s'\n" "${reference_name}" "${pattern_name}"
+				continue
+			fi
+
+			headerPrintf "Checkout submodules with reference '%s' because of pattern %s'" "${reference_name}" "${pattern_name}"
+			checkoutSubmodules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--only-sub='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			reference_name="${keyword_name:${option_length}}"
+
+			if [ -z "${reference_name}" ]
+			then
+				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
+				continue
+				continue
+			fi
+
+			headerPrintf "Checkout submodules with reference '%s'" "${reference_name}"
+			checkoutSubmodules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--'*)
+				errorPrintf 'Unknown option: %s\n' "${keyword_name}"
+				exit 1
+			;;
+
+		*)
+			reference_name="${keyword_name}"
+
+			if ! testPattern "${reference_name}" '^:'
+			then
+				if ! testReference "${reference_name}"
+				then
+					errorPrintf "Reference does not exist in current module: '%s'\n" "${reference_name}"
+					exit 2
+				fi
+			else
+				reference_name="${reference_name:1}"
+			fi
+
+			headerPrintf "Checkout modules references with '%s'" "${reference_name}"
+			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+	esac
+done
