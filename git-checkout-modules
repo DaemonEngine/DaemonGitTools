@@ -29,8 +29,8 @@ printHelp () {
 	\t                      checkout submodules with this reference name if name contains PATTERN
 
 	Names:
-	\tNAME                  checkout module and submodules with this reference NAME
-	\t:NAME                 checkout modules and submodules with this reference NAME but ignore
+	\tNAME                  checkout module and submodules with reference NAME
+	\t:NAME                 checkout modules and submodules with reference NAME but ignore
 	\t                      current module if reference NAME does not exist in current module
 	EOF
 
