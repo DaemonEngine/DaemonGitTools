@@ -76,6 +76,13 @@ listModules () {
 	git config --file .gitmodules --get-regexp path | awk '{ print $2 }'
 }
 
+updateModules () {
+	local repo_path="${1}"; shift
+	
+	printf "Update submodules for module path: '%s'\n" "${repo_path}"
+	git submodule update --init
+}
+
 walkModules () {
 	local action_name="${1}"; shift
 	local parent_path="${1}"; shift
@@ -90,12 +97,13 @@ walkModules () {
 			;;
 
 		'subcheckout')
-			git submodule update --init --recursive
+			updateModules "${repo_path}"
 			action_name='checkout'
 			;;
 
 		'checkout')
-			git submodule update --init --recursive
+			updateModules "${repo_path}"
+
 			if git checkout "${reference_name}" >/dev/null 2>&1
 			then
 				printf "Module path '%s': checked out '%s'\n" "${repo_path}" "${reference_name}"
