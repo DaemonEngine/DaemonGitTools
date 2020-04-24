@@ -96,7 +96,12 @@ walkModules () {
 
 		'checkout')
 			git submodule update --init --recursive
-			git checkout "${reference_name}" >/dev/null 2>&1 || true
+			if git checkout "${reference_name}" >/dev/null 2>&1
+			then
+				printf "Module path '%s': checked out '%s'\n" "${repo_path}" "${reference_name}"
+			else
+				printf "No '%s' reference in module path '%s'\n" "${reference_name}" "${repo_path}"
+			fi
 			;;
 	esac
 
