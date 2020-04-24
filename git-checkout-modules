@@ -96,6 +96,10 @@ walkModules () {
 			printf '%s %s %s %s\n' "${repo_path}" "$(getBranchName)" "$(getTagName)" "$(getCommitId)"
 			;;
 
+		'update')
+			updateModules "${repo_path}"
+			;;
+
 		'subcheckout')
 			updateModules "${repo_path}"
 			action_name='checkout'
@@ -117,30 +121,6 @@ walkModules () {
 	do
 		walkModules "${action_name}" "${parent_path}" "${repo_path}/${module_path}" "${reference_name}"
 	done
-}
-
-checkoutModules () {
-	local parent_path="${1}"; shift
-	local repo_path="${1}"; shift
-	local reference_name="${1}"; shift
-
-	walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
-}
-
-checkoutSubmodules () {
-	local parent_path="${1}"; shift
-	local repo_path="${1}"; shift
-	local reference_name="${1}"; shift
-
-	walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
-}
-
-revertModules () {
-	local parent_path="${1}"; shift
-	local repo_path="${1}"; shift
-
-	cd "${parent_path}/${repo_path}"
-	git submodule update --init --recursive
 }
 
 printModules () {
@@ -247,7 +227,7 @@ do
 
 		'--revert')
 			headerPrintf 'Revert modules references'
-			revertModules "${parent_path}" "${repo_path}"
+			walkModules 'update' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
 		'--detect-branch')
@@ -282,7 +262,7 @@ do
 			checkBranch "${reference_name}"
 
 			headerPrintf "Checkout modules with branch '%s'" "${reference_name}"
-			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
 		'--branch-has='*)
@@ -303,7 +283,7 @@ do
 			fi
 
 			headerPrintf "Checkout modules with branch '%s' because of pattern '%s'" "${reference_name}" "${pattern_name}"
-			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
 		'--tag')
@@ -312,7 +292,7 @@ do
 			checkTag "${reference_name}"
 
 			headerPrintf "Checkout modules with tag '%s'" "${reference_name}"
-			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
 		'--tag-has='*)
@@ -333,7 +313,7 @@ do
 			fi
 
 			headerPrintf "Checkout modules with tag '%s' because of pattern '%s'" "${reference_name}" "${pattern_name}"
-			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
 		'--only-sub='*':has='*)
@@ -355,7 +335,7 @@ do
 			fi
 
 			headerPrintf "Checkout submodules with reference '%s' because of pattern %s'" "${reference_name}" "${pattern_name}"
-			checkoutSubmodules "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
 		'--only-sub='*)
@@ -370,7 +350,7 @@ do
 			fi
 
 			headerPrintf "Checkout submodules with reference '%s'" "${reference_name}"
-			checkoutSubmodules "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
 		'--'*)
@@ -393,7 +373,7 @@ do
 			fi
 
 			headerPrintf "Checkout modules references with '%s'" "${reference_name}"
-			checkoutModules "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 	esac
 done
