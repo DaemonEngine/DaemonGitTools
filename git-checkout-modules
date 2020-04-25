@@ -24,14 +24,15 @@ printHelp () {
 	\t--branch-has=PATTERN  checkout submodules whith current branch name if name contains PATTERN
 	\t--tag                 checkout submodules whith current tag name
 	\t--tag-has=PATTERN     checkout submodules whith current tag name if name contains PATTERN
-	\t--only-sub=NAME       checkout submodules with this reference name
-	\t--only-sub=NAME:has=PATTERN
+	\t--ref=NAME            checkout module and submodules with this reference name
+	\t--ref=NAME:has=PATTERN
+	\t                      checkout module and submodules with this reference name if name contains PATTERN
+	\t--sub-ref=NAME        checkout submodules with this reference name
+	\t--sub-ref=NAME:has=PATTERN
 	\t                      checkout submodules with this reference name if name contains PATTERN
 
 	Names:
-	\tNAME                  checkout module and submodules with reference NAME
-	\t:NAME                 checkout modules and submodules with reference NAME but ignore
-	\t                      current module if reference NAME does not exist in current module
+	\tNAME                  checkout module and submodules with reference NAME if exists
 	EOF
 
 	exit
@@ -316,7 +317,44 @@ do
 			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
-		'--only-sub='*':has='*)
+		'--ref='*':has='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			reference_name="$(echo "${keyword_name:${option_length}}" | cut -f1 -d':')"
+			pattern_name="$(echo "${keyword_name:${option_length}}" | cut -f2 -d':')"
+			pattern_name="${pattern_name:4}"
+
+			if [ -z "${reference_name}" ]
+			then
+				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
+				continue
+			fi
+
+			if ! testPattern "${reference_name}" "${pattern_name}"
+			then
+				warningPrintf "Current reference '%s' in current module does not have pattern: '%s'\n" "${reference_name}" "${pattern_name}"
+				continue
+			fi
+
+			headerPrintf "Checkout submodules with reference '%s' because of pattern %s'" "${reference_name}" "${pattern_name}"
+			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--ref='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			reference_name="${keyword_name:${option_length}}"
+
+			if [ -z "${reference_name}" ]
+			then
+				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
+				continue
+				continue
+			fi
+
+			headerPrintf "Checkout submodules with reference '%s'" "${reference_name}"
+			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--sub-ref='*':has='*|'--only-sub='*':has='*)
 			option_length="$(getOptionLength "${keyword_name}")"
 			reference_name="$(echo "${keyword_name:${option_length}}" | cut -f1 -d':')"
 			pattern_name="$(echo "${keyword_name:${option_length}}" | cut -f2 -d':')"
@@ -338,7 +376,7 @@ do
 			walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
-		'--only-sub='*)
+		'--sub-ref='*|'--only-sub='*)
 			option_length="$(getOptionLength "${keyword_name}")"
 			reference_name="${keyword_name:${option_length}}"
 
