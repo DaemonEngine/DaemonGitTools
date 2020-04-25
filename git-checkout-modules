@@ -20,10 +20,10 @@ printHelp () {
 	\t--update              checkout submodules with registered references, clone if missing
 	\t--detect-branch       checkout branch for current module if detect branch for current commit 
 	\t--detect-tag          checkout tag for current module if detect tag for current commit 
-	\t--branch              checkout submodules whith current branch name
-	\t--branch-has=PATTERN  checkout submodules whith current branch name if name contains PATTERN
-	\t--tag                 checkout submodules whith current tag name
-	\t--tag-has=PATTERN     checkout submodules whith current tag name if name contains PATTERN
+	\t--branch              checkout submodules with current branch name
+	\t--branch-has=PATTERN  checkout submodules with current branch name if name contains PATTERN
+	\t--tag                 checkout submodules with current tag name
+	\t--tag-has=PATTERN     checkout submodules with current tag name if name contains PATTERN
 	\t--ref=NAME            checkout module and submodules with this reference name
 	\t--ref=NAME:has=PATTERN
 	\t                      checkout module and submodules with this reference name if name contains PATTERN
@@ -32,7 +32,7 @@ printHelp () {
 	\t                      checkout submodules with this reference name if name contains PATTERN
 
 	Names:
-	\tNAME                  checkout module and submodules with reference NAME if exists
+	\tNAME                  checkout module and submodules with reference NAME
 	EOF
 
 	exit
