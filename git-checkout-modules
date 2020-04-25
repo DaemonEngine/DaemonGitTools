@@ -17,7 +17,7 @@ printHelp () {
 	Options:
 	\t--help                print this help
 	\t--print               print current modules references
-	\t--revert              revert submodules to registered references
+	\t--update              checkout submodules with registered references, clone if missing
 	\t--detect-branch       checkout branch for current module if detect branch for current commit 
 	\t--detect-tag          checkout tag for current module if detect tag for current commit 
 	\t--branch              checkout submodules whith current branch name
@@ -226,8 +226,8 @@ do
 			printModules "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
-		'--revert')
-			headerPrintf 'Revert modules references'
+		'--update'|'--revert')
+			headerPrintf 'Checkout modules references with registered reference, clone if missing'
 			walkModules 'update' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
@@ -331,11 +331,11 @@ do
 
 			if ! testPattern "${reference_name}" "${pattern_name}"
 			then
-				warningPrintf "Current reference '%s' in current module does not have pattern: '%s'\n" "${reference_name}" "${pattern_name}"
+				warningPrintf "Reference '%s' in module '%s' does not have pattern: '%s'\n" "${reference_name}" "${repo_path}" "${pattern_name}"
 				continue
 			fi
 
-			headerPrintf "Checkout submodules with reference '%s' because of pattern %s'" "${reference_name}" "${pattern_name}"
+			headerPrintf "Checkout submodules with reference '%s' because of pattern '%s'" "${reference_name}" "${pattern_name}"
 			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
@@ -346,7 +346,6 @@ do
 			if [ -z "${reference_name}" ]
 			then
 				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
-				continue
 				continue
 			fi
 
@@ -368,11 +367,11 @@ do
 
 			if ! testPattern "${reference_name}" "${pattern_name}"
 			then
-				warningPrintf "Current reference '%s' in current module does not have pattern: '%s'\n" "${reference_name}" "${pattern_name}"
+				warningPrintf "Reference '%s' in module '%s' does not have pattern: '%s'\n" "${reference_name}" "${repo_path}" "${pattern_name}"
 				continue
 			fi
 
-			headerPrintf "Checkout submodules with reference '%s' because of pattern %s'" "${reference_name}" "${pattern_name}"
+			headerPrintf "Checkout submodules with reference '%s' because of pattern '%s'" "${reference_name}" "${pattern_name}"
 			walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
@@ -383,7 +382,6 @@ do
 			if [ -z "${reference_name}" ]
 			then
 				warningPrintf "Empty reference name: '%s'\n" "${reference_name}"
-				continue
 				continue
 			fi
 
