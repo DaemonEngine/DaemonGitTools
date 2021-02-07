@@ -63,13 +63,13 @@ git-checkout-modules --detect-branch
 
 ```sh
 # checkout all submodules with the current branch name when possible
-git-checkout-modules --branch
+git-checkout-modules --current-branch
 ```
 
 ```sh
 # if current branch name has pattern
 # checkout all submodules with this branch name when possible
-git-checkout-modules --branch-has='pattern'
+git-checkout-modules --current-branch:has='pattern'
 ```
 
 ```sh
@@ -79,13 +79,13 @@ git-checkout-modules --detect-branch
 
 ```sh
 # checkout all submodules with the current tag name when possible
-git-checkout-modules --tag
+git-checkout-modules --current-tag
 ```
 
 ```sh
 # if current tag name has pattern
 # checkout all submodules with this branch name when possible
-git-checkout-modules --tag-has='pattern'
+git-checkout-modules --current-tag:has='pattern'
 ```
 
 ```sh
@@ -123,7 +123,7 @@ And of course, you can do what it is made for:
 # checkout all submodules with this branch name when possible
 # or checkout other submodules with their registered references
 # then print submodules references
-git-checkout-modules --branch-has='/sync$' --revert --print
+git-checkout-modules --current-branch:has='/sync$' --revert --print
 ```
 
 
@@ -194,7 +194,7 @@ While current module is on branch `illwieckz/test/sync`, if that branch name end
 ```sh
 git checkout 'illwieckz/test/sync'
 git checkout "$(git rev-parse HEAD)"
-git-checkout-modules --detect-branch --branch-has='/sync$' --print
+git-checkout-modules --detect-branch --current-branch:has='/sync$' --print
 ```
 
 ```
