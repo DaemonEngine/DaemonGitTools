@@ -75,6 +75,15 @@ getTagName () {
 	fi
 }
 
+pullModule () {
+	local current_branch="$(git branch --show-current)"
+
+	if [ "${current_branch}" != '' ]
+	then
+		git pull
+	fi
+}
+
 listModules () {
 	git config --file .gitmodules --get-regexp path | awk '{ print $2 }'
 }
@@ -117,6 +126,10 @@ walkModules () {
 			else
 				printf "No '%s' reference in module path '%s'\n" "${reference_name}" "${repo_path}"
 			fi
+			;;
+
+		'pull')
+			pullModule
 			;;
 	esac
 
@@ -389,6 +402,12 @@ do
 
 			headerPrintf "Checkout submodules with reference '%s'" "${reference_name}"
 			walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--pull')
+
+			headerPrintf "Pull submodules"
+			walkModules 'pull' "${parent_path}" "${repo_path}" '-'
 			;;
 
 		'--'*)
