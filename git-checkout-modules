@@ -20,10 +20,12 @@ printHelp () {
 	\t--update              checkout submodules with registered references, clone if missing
 	\t--detect-branch       checkout branch for current module if detect branch for current commit 
 	\t--detect-tag          checkout tag for current module if detect tag for current commit 
-	\t--branch              checkout submodules with current branch name
-	\t--branch-has=PATTERN  checkout submodules with current branch name if name contains PATTERN
-	\t--tag                 checkout submodules with current tag name
-	\t--tag-has=PATTERN     checkout submodules with current tag name if name contains PATTERN
+	\t--current-branch      checkout submodules with current branch name
+	\t--current-branch:has=PATTERN
+	\t                      checkout submodules with current branch name if name contains PATTERN
+	\t--current-tag         checkout submodules with current tag name
+	\t--current-tag:has=PATTERN
+	\t                      checkout submodules with current tag name if name contains PATTERN
 	\t--ref=NAME            checkout module and submodules with this reference name
 	\t--ref=NAME:has=PATTERN
 	\t                      checkout module and submodules with this reference name if name contains PATTERN
@@ -257,7 +259,7 @@ do
 			git checkout "${reference_name}"
 			;;
 
-		'--branch')
+		'--current-branch')
 			reference_name="${branch_name}"
 
 			checkBranch "${reference_name}"
@@ -266,7 +268,7 @@ do
 			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
-		'--branch-has='*)
+		'--current-branch:has='*|'--branch-has='*)
 			option_length="$(getOptionLength "${keyword_name}")"
 			pattern_name="${keyword_name:${option_length}}"
 			reference_name="${branch_name}"
@@ -287,7 +289,7 @@ do
 			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
-		'--tag')
+		'--current-tag')
 			reference_name="${tag_name}"
 
 			checkTag "${reference_name}"
@@ -296,7 +298,7 @@ do
 			walkModules 'checkout' "${parent_path}" "${repo_path}" "${reference_name}"
 			;;
 
-		'--tag-has='*)
+		'--current-tag:has='*|'--tag-has='*)
 			option_length="$(getOptionLength "${keyword_name}")"
 			pattern_name="${keyword_name:${option_length}}"
 			reference_name="${tag_name}"
