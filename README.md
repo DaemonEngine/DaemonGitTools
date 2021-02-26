@@ -88,16 +88,29 @@ git-checkout-modules --current-tag
 git-checkout-modules --current-tag:has='pattern'
 ```
 
+
 ```sh
-# checkout all modules with the given branch name when possible
-# and given branch name exists in current module
-git-checkout-modules 'name'
+# checkout all submodules with the given reference name when possible
+# even if given reference name does not exist in current module
+git-checkout-modules --ref='name'
+```
+
+```sh
+# checkout all submodules with the given reference name when possible
+# if this reference name has pattern
+# even if given reference name does not exist in current module
+git-checkout-modules --ref='name':has='pattern'
+```
+
+```sh
+# checkout all submodules with the given branch name when possible
+git-checkout-modules --sub-ref='name'
 ```
 
 ```sh
 # checkout all modules with the given branch name when possible
-# even if given branch name does not exist in current module
-git-checkout-modules ':name'
+# and given branch name exists in current module
+git-checkout-modules 'name'
 ```
 
 ```
@@ -249,7 +262,7 @@ Unvanquished/daemon/libs/recastnavigation  master  unvanquished/0.51.1  6b68934d
 Unvanquished/pkg/unvanquished_src.dpkdir   master  undefined            8f2e40b31c182f5e10d67f80252746eb3391ea8e
 ```
 
-Attempt to checkout all modules with `parallax` branch, but this branch does not exists on current module:
+Attempt to checkout all modules with `parallax` branch, but this branch does not exist on current module:
 
 ```sh
 git-checkout-modules 'parallax'
@@ -258,10 +271,19 @@ git-checkout-modules 'parallax'
 ERROR: Reference does not exist in current module: 'parallax'
 ```
 
-Checkout all modules with `parallax` branch when possible, even if this branch does not exists on current module:
+Checkout all sub modules with `parallax` branch, even if this branch does not exist on current module:
 
 ```sh
-git-checkout-modules ':parallax' --print
+git-checkout-modules --ref='parallax'
+```
+```
+Checkout modules references with 'parallax'
+```
+
+Checkout all sub modules with `parallax` branch:
+
+```sh
+git-checkout-modules --sub-ref='parallax' --print
 ```
 ```
 Checkout modules references with 'parallax'
