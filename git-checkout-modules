@@ -77,10 +77,13 @@ getTagName () {
 }
 
 pullModule () {
+	local repo_path="${1}"; shift
+
 	local current_branch="$(git branch --show-current)"
 
 	if [ "${current_branch}" != '' ]
 	then
+		printf "Pull module path: '%s'\n" "${repo_path}"
 		git pull
 	fi
 }
@@ -130,7 +133,7 @@ walkModules () {
 			;;
 
 		'pull')
-			pullModule
+			pullModule "${repo_path}"
 			;;
 	esac
 
