@@ -116,11 +116,6 @@ walkModules () {
 			updateModules "${repo_path}"
 			;;
 
-		'subcheckout')
-			updateModules "${repo_path}"
-			action_name='checkout'
-			;;
-
 		'checkout')
 			updateModules "${repo_path}"
 
@@ -130,6 +125,10 @@ walkModules () {
 			else
 				printf "No '%s' reference in module path '%s'\n" "${reference_name}" "${repo_path}"
 			fi
+			;;
+
+		'subcheckout')
+			action_name='checkout'
 			;;
 
 		'pull')
