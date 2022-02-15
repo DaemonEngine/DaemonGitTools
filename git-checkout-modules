@@ -25,6 +25,8 @@ printHelp () {
 	\t--push                push submodules
 	\t--run-before=COMMAND  run command before entering submodules (to the deepest)
 	\t--run-after=COMMAND   run command after entering submodules (from the deepest)
+	\t--list-upstream-branches
+	\t                      list all upstream module and submodules branch names
 	\t--detect-branch       checkout branch for current module if detect branch for current commit 
 	\t--detect-tag          checkout tag for current module if detect tag for current commit 
 	\t--current-branch      checkout submodules with current branch name
@@ -145,6 +147,14 @@ runModule () {
 	fi
 }
 
+listUpstreamBranchModule () {
+	git ls-remote origin \
+		| awk '{ print $2 }' \
+		| egrep '^refs/heads/' \
+		| cut -c12- \
+		| sort -u
+}
+
 listModules () {
 	git config --file .gitmodules --get-regexp path | awk '{ print $2 }'
 }
@@ -199,6 +209,10 @@ walkModules () {
 		'run-before')
 			local command_string="${1}"
 			runModule "${repo_path}" "${command_string}"
+			;;
+
+		'list-upstream-branches')
+			listUpstreamBranchModule "${repo_path}"
 			;;
 	esac
 
@@ -526,6 +540,11 @@ do
 			command_string="${keyword_name:${option_length}}"
 			headerPrintf "Run command before after entering submodules"
 			walkModules 'run-after' "${parent_path}" "${repo_path}" "${command_string}"
+			;;
+
+		'--list-upstream-branches')
+			headerPrintf "List all upstream module and submodules branch names"
+			walkModules 'list-upstream-branches' "${parent_path}" "${repo_path}" | sort -u
 			;;
 
 		'--'*)
