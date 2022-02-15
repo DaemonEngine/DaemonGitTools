@@ -111,7 +111,7 @@ commitModule () {
 	if [ "${current_branch}" != '' ]
 	then
 		printf "Commit module path: '%s'\n" "${repo_path}"
-		git commit -am 'sync submodules'
+		git diff --quiet || git commit -am 'sync submodules'
 	fi
 }
 
