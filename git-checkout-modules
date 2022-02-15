@@ -4,6 +4,7 @@
 # License: ISC
 
 set -e
+set -u
 
 program_name="$(basename "${0}")"
 first_header='true'
@@ -22,6 +23,8 @@ printHelp () {
 	\t--pull                pull submodules
 	\t--commit              commit submodules
 	\t--push                push submodules
+	\t--run-before=COMMAND  run command before entering submodules (to the deepest)
+	\t--run-after=COMMAND   run command after entering submodules (from the deepest)
 	\t--detect-branch       checkout branch for current module if detect branch for current commit 
 	\t--detect-tag          checkout tag for current module if detect tag for current commit 
 	\t--current-branch      checkout submodules with current branch name
@@ -127,6 +130,17 @@ pushModule () {
 	fi
 }
 
+runModule () {
+	local repo_path="${1}"; shift
+	local command_string="${1}"; shift
+
+	if [ -n "${command_string}" ]
+	then
+		printf "Run command on module path: '%s', '%s'\n" "${repo_path}" "${command_string}"
+		bash -c "set -e; set -u; ${command_string}"
+	fi
+}
+
 listModules () {
 	git config --file .gitmodules --get-regexp path | awk '{ print $2 }'
 }
@@ -142,7 +156,6 @@ walkModules () {
 	local action_name="${1}"; shift
 	local parent_path="${1}"; shift
 	local repo_path="${1}"; shift
-	local reference_name="${1}"; shift
 
 	cd "${parent_path}/${repo_path}"
 
@@ -156,6 +169,7 @@ walkModules () {
 			;;
 
 		'checkout')
+			local reference_name="${1}"
 			updateModules "${repo_path}"
 
 			if git checkout "${reference_name}" >/dev/null 2>&1
@@ -177,11 +191,16 @@ walkModules () {
 		'pull')
 			pullModule "${repo_path}"
 			;;
+
+		'run-before')
+			local command_string="${1}"
+			runModule "${repo_path}" "${command_string}"
+			;;
 	esac
 
 	for module_path in $(listModules)
 	do
-		walkModules "${action_name}" "${parent_path}" "${repo_path}/${module_path}" "${reference_name}"
+		walkModules "${action_name}" "${parent_path}" "${repo_path}/${module_path}" "${1:-}"
 	done
 
 	cd "${parent_path}/${repo_path}"
@@ -190,8 +209,14 @@ walkModules () {
 		'commit')
 			commitModule "${repo_path}"
 			;;
+
 		'push')
 			pushModule "${repo_path}"
+			;;
+
+		'run-after')
+			local command_string="${1}"; shift
+			runModule "${repo_path}" "${command_string}"
 			;;
 	esac
 }
@@ -275,8 +300,9 @@ repo_path="$(basename "${PWD}")"
 branch_name="$(getBranchName)"
 tag_name="$(getTagName)"
 
+separator=$'\t'
 keyword_list=''
-while ! [ -z "${1}" ]
+while ! [ -z "${1:-}" ]
 do
 	case "${1}" in
 		'--help'|'-h')
@@ -284,14 +310,18 @@ do
 			;;
 
 		*)
-			keyword_list+=" ${1}"
+			keyword_list+="${keyword_list:+${separator}}${1}"
 			shift
 			;;
 	esac
 done
 
+BKP_IFS="${IFS}"
+IFS="${separator}"
 for keyword_name in ${keyword_list}
 do
+	IFS="${BKP_IFS}"
+
 	case "${keyword_name}" in
 		'--print')
 			headerPrintf 'Print modules references'
@@ -463,22 +493,36 @@ do
 
 		'--fetch')
 			headerPrintf "Fetch submodules"
-			walkModules 'fetch' "${parent_path}" "${repo_path}" '-'
+			walkModules 'fetch' "${parent_path}" "${repo_path}"
 			;;
 
 		'--pull')
 			headerPrintf "Pull submodules"
-			walkModules 'pull' "${parent_path}" "${repo_path}" '-'
+			walkModules 'pull' "${parent_path}" "${repo_path}"
 			;;
 
 		'--commit')
 			headerPrintf "Commit submodules"
-			walkModules 'commit' "${parent_path}" "${repo_path}" '-'
+			walkModules 'commit' "${parent_path}" "${repo_path}"
 			;;
 
 		'--push')
 			headerPrintf "Push submodules"
-			walkModules 'push' "${parent_path}" "${repo_path}" '-'
+			walkModules 'push' "${parent_path}" "${repo_path}"
+			;;
+
+		'--run-before='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			command_string="${keyword_name:${option_length}}"
+			headerPrintf "Run command before entering submodules"
+			walkModules 'run-before' "${parent_path}" "${repo_path}" "${command_string}"
+			;;
+
+		'--run-after='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			command_string="${keyword_name:${option_length}}"
+			headerPrintf "Run command before after entering submodules"
+			walkModules 'run-after' "${parent_path}" "${repo_path}" "${command_string}"
 			;;
 
 		'--'*)
