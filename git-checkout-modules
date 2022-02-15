@@ -47,6 +47,10 @@ printHelp () {
 	exit
 }
 
+printf2 () {
+	printf "${@}" >&2
+}
+
 getCommitId () {
 	git rev-parse --verify HEAD
 }
@@ -89,7 +93,7 @@ fetchModule () {
 
 	if [ "${current_branch}" != '' ]
 	then
-		printf "Fetch module path: '%s'\n" "${repo_path}"
+		printf2 "Fetch module path: '%s'\n" "${repo_path}"
 		git fetch
 	fi
 }
@@ -101,7 +105,7 @@ pullModule () {
 
 	if [ "${current_branch}" != '' ]
 	then
-		printf "Pull module path: '%s'\n" "${repo_path}"
+		printf2 "Pull module path: '%s'\n" "${repo_path}"
 		git pull
 	fi
 }
@@ -113,7 +117,7 @@ commitModule () {
 
 	if [ "${current_branch}" != '' ]
 	then
-		printf "Commit module path: '%s'\n" "${repo_path}"
+		printf2 "Commit module path: '%s'\n" "${repo_path}"
 		git diff --quiet || git commit -am 'sync submodules'
 	fi
 }
@@ -125,7 +129,7 @@ pushModule () {
 
 	if [ "${current_branch}" != '' ]
 	then
-		printf "Push module path: '%s'\n" "${repo_path}"
+		printf2 "Push module path: '%s'\n" "${repo_path}"
 		git push
 	fi
 }
@@ -136,7 +140,7 @@ runModule () {
 
 	if [ -n "${command_string}" ]
 	then
-		printf "Run command on module path: '%s', '%s'\n" "${repo_path}" "${command_string}"
+		printf2 "Run command on module path: '%s', '%s'\n" "${repo_path}" "${command_string}"
 		bash -c "set -e; set -u; ${command_string}"
 	fi
 }
@@ -148,7 +152,7 @@ listModules () {
 updateModules () {
 	local repo_path="${1}"; shift
 
-	printf "Update submodules for module path: '%s'\n" "${repo_path}"
+	printf2 "Update submodules for module path: '%s'\n" "${repo_path}"
 	git submodule update --init
 }
 
@@ -174,9 +178,9 @@ walkModules () {
 
 			if git checkout "${reference_name}" >/dev/null 2>&1
 			then
-				printf "Module path '%s': checked out '%s'\n" "${repo_path}" "${reference_name}"
+				printf2 "Module path '%s': checked out '%s'\n" "${repo_path}" "${reference_name}"
 			else
-				printf "No '%s' reference in module path '%s'\n" "${reference_name}" "${repo_path}"
+				printf2 "No '%s' reference in module path '%s'\n" "${reference_name}" "${repo_path}"
 			fi
 			;;
 
@@ -224,11 +228,10 @@ walkModules () {
 printModules () {
 	local parent_path="${1}"; shift
 	local repo_path="${1}"; shift
-	local reference_name="${1}"; shift
 
 	{
 		printf 'MODULE BRANCH TAG REFERENCE\n'
-		walkModules 'print' "${parent_path}" "${repo_path}" "${reference_name}"
+		walkModules 'print' "${parent_path}" "${repo_path}"
 	} | column -t
 }
 
@@ -274,12 +277,12 @@ checkTag () {
 
 warningPrintf () {
 	local format_string="${1}"; shift
-	printf 'WARNING: '"${format_string}"'\n' ${@} >&2
+	printf2 'WARNING: '"${format_string}"'\n' ${@}
 }
 
 errorPrintf () {
 	local format_string="${1}"; shift
-	printf 'ERROR: '"${format_string}"'\n' ${@} >&2
+	printf2 'ERROR: '"${format_string}"'\n' ${@}
 }
 
 headerPrintf () {
@@ -287,12 +290,12 @@ headerPrintf () {
 
 	if ! "${first_header}"
 	then
-		printf '\n' >&2
+		printf2 '\n'
 	else
 		first_header='false'
 	fi
 
-	printf "${format_string}"'\n' ${@} >&2
+	printf2 "${format_string}"'\n' ${@}
 }
 
 parent_path="$(dirname "${PWD}")"
@@ -325,7 +328,7 @@ do
 	case "${keyword_name}" in
 		'--print')
 			headerPrintf 'Print modules references'
-			printModules "${parent_path}" "${repo_path}" "${reference_name}"
+			printModules "${parent_path}" "${repo_path}"
 			;;
 
 		'--update'|'--revert')
