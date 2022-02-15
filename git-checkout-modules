@@ -21,6 +21,7 @@ printHelp () {
 	\t--fetch               fetch submodules
 	\t--pull                pull submodules
 	\t--commit              commit submodules
+	\t--push                push submodules
 	\t--detect-branch       checkout branch for current module if detect branch for current commit 
 	\t--detect-tag          checkout tag for current module if detect tag for current commit 
 	\t--current-branch      checkout submodules with current branch name
@@ -114,6 +115,18 @@ commitModule () {
 	fi
 }
 
+pushModule () {
+	local repo_path="${1}"; shift
+
+	local current_branch="$(git branch --show-current)"
+
+	if [ "${current_branch}" != '' ]
+	then
+		printf "Push module path: '%s'\n" "${repo_path}"
+		git push
+	fi
+}
+
 listModules () {
 	git config --file .gitmodules --get-regexp path | awk '{ print $2 }'
 }
@@ -174,6 +187,9 @@ walkModules () {
 	case "${action_name}" in
 		'commit')
 			commitModule "${repo_path}"
+			;;
+		'push')
+			pushModule "${repo_path}"
 			;;
 	esac
 }
@@ -456,6 +472,11 @@ do
 		'--commit')
 			headerPrintf "Commit submodules"
 			walkModules 'commit' "${parent_path}" "${repo_path}" '-'
+			;;
+
+		'--push')
+			headerPrintf "Push submodules"
+			walkModules 'push' "${parent_path}" "${repo_path}" '-'
 			;;
 
 		'--'*)
