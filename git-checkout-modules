@@ -184,6 +184,8 @@ walkModules () {
 		walkModules "${action_name}" "${parent_path}" "${repo_path}/${module_path}" "${reference_name}"
 	done
 
+	cd "${parent_path}/${repo_path}"
+
 	case "${action_name}" in
 		'commit')
 			commitModule "${repo_path}"
