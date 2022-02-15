@@ -18,6 +18,7 @@ printHelp () {
 	\t--help                print this help
 	\t--print               print current modules references
 	\t--update              checkout submodules with registered references, clone if missing
+	\t--fetch               fetch submodules
 	\t--pull                pull submodules
 	\t--detect-branch       checkout branch for current module if detect branch for current commit 
 	\t--detect-tag          checkout tag for current module if detect tag for current commit 
@@ -76,6 +77,18 @@ getTagName () {
 	fi
 }
 
+fetchModule () {
+	local repo_path="${1}"; shift
+
+	local current_branch="$(git branch --show-current)"
+
+	if [ "${current_branch}" != '' ]
+	then
+		printf "Fetch module path: '%s'\n" "${repo_path}"
+		git fetch
+	fi
+}
+
 pullModule () {
 	local repo_path="${1}"; shift
 
@@ -129,6 +142,10 @@ walkModules () {
 
 		'subcheckout')
 			action_name='checkout'
+			;;
+
+		'fetch')
+			fetchModule "${repo_path}"
 			;;
 
 		'pull')
@@ -405,6 +422,12 @@ do
 
 			headerPrintf "Checkout submodules with reference '%s'" "${reference_name}"
 			walkModules 'subcheckout' "${parent_path}" "${repo_path}" "${reference_name}"
+			;;
+
+		'--fetch')
+
+			headerPrintf "Fetch submodules"
+			walkModules 'fetch' "${parent_path}" "${repo_path}" '-'
 			;;
 
 		'--pull')
