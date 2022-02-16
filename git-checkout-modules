@@ -353,7 +353,7 @@ do
 
 		'--update'|'--revert')
 			headerPrintf 'Checkout modules references with registered reference, clone if missing'
-			walkModules 'update' "${parent_path}" "${repo_path}" "${reference_name}"
+			walkModules 'update' "${parent_path}" "${repo_path}"
 			;;
 
 		'--detect-branch')
