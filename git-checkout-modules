@@ -297,12 +297,12 @@ checkTag () {
 
 warningPrintf () {
 	local format_string="${1}"; shift
-	printf2 'WARNING: '"${format_string}"'\n' ${@}
+	printf2 'WARNING: '"${format_string}"'\n' ${@:-}
 }
 
 errorPrintf () {
 	local format_string="${1}"; shift
-	printf2 'ERROR: '"${format_string}"'\n' ${@}
+	printf2 'ERROR: '"${format_string}"'\n' ${@:-}
 }
 
 headerPrintf () {
@@ -315,7 +315,7 @@ headerPrintf () {
 		first_header='false'
 	fi
 
-	printf2 "${format_string}"'\n' ${@}
+	printf2 "${format_string}"'\n' ${@:-}
 }
 
 parent_path="$(dirname "${PWD}")"
