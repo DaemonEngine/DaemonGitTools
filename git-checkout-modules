@@ -176,6 +176,12 @@ walkModules () {
 	local parent_path="${1}"; shift
 	local repo_path="${1}"; shift
 
+	if ! [ -d "${parent_path}/${repo_path}" ]
+	then
+		git checkout "${parent_path}/${repo_path}"
+		git submodule update --init "${parent_path}/${repo_path}"
+	fi
+
 	cd "${parent_path}/${repo_path}"
 
 	case "${action_name}" in
