@@ -23,6 +23,7 @@ printHelp () {
 	\t--pull                pull submodules
 	\t--commit              commit module and submodules
 	\t--commit:branch=NAME  commit module and submodules if branch name is NAME
+	\t--merge=NAME          merge module and submodules branch named NAME
 	\t--push                push submodules
 	\t--run-before=COMMAND  run command before entering submodules (to the deepest)
 	\t--run-after=COMMAND   run command after entering submodules (from the deepest)
@@ -113,6 +114,11 @@ pullModule () {
 	fi
 }
 
+addModules () {
+	listModules \
+		| xargs -I{} -P1 git add {}
+}
+
 commitModule () {
 	local repo_path="${1}"; shift
 	local branch_name="${1}"; shift
@@ -123,8 +129,38 @@ commitModule () {
 	then
 		if [ -z "${branch_name}" -o "${branch_name}" = "${current_branch}" ]
 		then
+			printf2 "Add submodules for module path: '%s'\n" "${repo_path}"
+			addModules
+
 			printf2 "Commit module path: '%s'\n" "${repo_path}"
-			git diff --quiet || git commit -am 'sync submodules'
+			git diff --cached --exit-code || git commit -m "sync ${current_branch} submodules"
+		fi
+	fi
+}
+
+mergeModule () {
+	local repo_path="${1}"; shift
+	local branch_name="${1}"; shift
+
+	local current_branch="$(git branch --show-current)"
+
+	if [ "${current_branch}" != '' ]
+	then
+		if [ -z "${branch_name}" ]
+		then
+			true
+		elif [ "${branch_name}" = "${current_branch}" ]
+		then
+			printf2 "Not merging '${branch_name}' on '${current_branch}'\n"
+		else
+			printf2 "Add submodules for module path: '%s'\n" "${repo_path}"
+			addModules
+
+			printf2 "Commit module path: '%s'\n" "${repo_path}"
+			git diff --cached --exit-code || git commit -m "sync ${current_branch} submodules"
+
+			printf2 "Merge branch: '%s'\n" "${branch_name}"
+			git merge -Xours "${branch_name}"
 		fi
 	fi
 }
@@ -161,7 +197,8 @@ listUpstreamBranchModule () {
 }
 
 listModules () {
-	git config --file .gitmodules --get-regexp path | awk '{ print $2 }'
+	git config --file .gitmodules --get-regexp path \
+		| awk '{ print $2 }'
 }
 
 updateModules () {
@@ -238,6 +275,11 @@ walkModules () {
 		'commit')
 			local branch_name="${1:-}"
 			commitModule "${repo_path}" "${branch_name}"
+			;;
+
+		'merge')
+			local branch_name="${1:-}"
+			mergeModule "${repo_path}" "${branch_name}"
 			;;
 
 		'push')
@@ -539,8 +581,26 @@ do
 			option_length="$(getOptionLength "${keyword_name}")"
 			branch_name="${keyword_name:${option_length}}"
 
+			if [ -z "${branch_name}" ]
+			then
+				errorPrintf 'Missing branch name to commite\n'
+			fi
+
 			headerPrintf "Commit submodules if branch name is '%s'" "${branch_name}"
 			walkModules 'commit' "${parent_path}" "${repo_path}" "${branch_name}"
+			;;
+
+		'--merge='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			branch_name="${keyword_name:${option_length}}"
+
+			if [ -z "${branch_name}" ]
+			then
+				errorPrintf 'Missing branch name to merge\n'
+			fi
+
+			headerPrintf "Merging submodules with branch named '%s'" "${branch_name}"
+			walkModules 'merge' "${parent_path}" "${repo_path}" "${branch_name}"
 			;;
 
 		'--push')
