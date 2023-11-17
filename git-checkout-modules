@@ -13,9 +13,11 @@ printHelp () {
 	sed -e 's/\\t/\t/' <<-EOF
 	${program_name}: sync all git modules to same reference when possible
 
-	Usage: ${program_name} [OPTION|NAME] …
+	Usage: ${program_name} [-C DIRECTORY] [OPTION|NAME] …
 
 	Options:
+	\t-C DIRECTORY          change current directory to this directory before doing anything,
+	\t                      must be first option if used
 	\t--help                print this help
 	\t--print               print current modules references
 	\t--update              checkout submodules with registered references, clone if missing
@@ -365,6 +367,25 @@ headerPrintf () {
 
 	printf2 "${format_string}"'\n' ${@:-}
 }
+
+if [ "${1:-}" = '-C' ]
+then
+	if [ -z "${1:-}" ]
+	then
+		errorPrintf 'missing path for -C option'
+	fi
+
+	shift
+
+	if [ ! -d "${1}" ]
+	then
+		errorPrintf 'not a folder: %s' "${1}"
+	fi
+
+	cd "${1}"
+
+	shift
+fi
 
 parent_path="$(dirname "${PWD}")"
 repo_path="$(basename "${PWD}")"
