@@ -162,7 +162,7 @@ mergeModule () {
 			git diff --cached --exit-code || git commit -m "sync ${current_branch} submodules"
 
 			printf2 "Merge branch: '%s'\n" "${branch_name}"
-			git merge -Xours "${branch_name}"
+			git merge --no-edit -Xours "${branch_name}"
 		fi
 	fi
 }
