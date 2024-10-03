@@ -647,7 +647,7 @@ do
 			walkModules 'merge' "${parent_path}" "${repo_path}" "${branch_name}"
 			;;
 
-		'--merge:ours='*)
+		'--merge-ours='*)
 			option_length="$(getOptionLength "${keyword_name}")"
 			branch_name="${keyword_name:${option_length}}"
 
@@ -660,7 +660,7 @@ do
 			walkModules 'merge-ours' "${parent_path}" "${repo_path}" "${branch_name}"
 			;;
 
-		'--merge:theirs='*)
+		'--merge-theirs='*)
 			option_length="$(getOptionLength "${keyword_name}")"
 			branch_name="${keyword_name:${option_length}}"
 
