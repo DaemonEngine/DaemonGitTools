@@ -143,6 +143,7 @@ commitModule () {
 mergeModule () {
 	local repo_path="${1}"; shift
 	local branch_name="${1}"; shift
+	local merge_strategy="${1}"; shift
 
 	local current_branch="$(git branch --show-current)"
 
@@ -162,7 +163,19 @@ mergeModule () {
 			git diff --cached --exit-code || git commit -m "sync ${current_branch} submodules"
 
 			printf2 "Merge branch: '%s'\n" "${branch_name}"
-			git merge --no-edit -Xours "${branch_name}"
+
+			if [ "${merge_strategy}" = 'manual' ]
+			then
+				while ! git merge --no-edit "${branch_name}"
+				do
+					printf2 "Failed to merge branch, opening a shell.\n"
+					printf2 "Please fix the merge and exit this shell to let the task continue.\n"
+					printf2 "Use (l)ocal to solve possible submodule merge conflicts.\n"
+					/usr/bin/env bash
+				done
+			else
+				git merge --no-edit -X"${merge_strategy}" "${branch_name}"
+			fi
 		fi
 	fi
 }
@@ -281,7 +294,17 @@ walkModules () {
 
 		'merge')
 			local branch_name="${1:-}"
-			mergeModule "${repo_path}" "${branch_name}"
+			mergeModule "${repo_path}" "${branch_name}" 'manual'
+			;;
+
+		'merge-ours')
+			local branch_name="${1:-}"
+			mergeModule "${repo_path}" "${branch_name}" 'ours'
+			;;
+
+		'merge-theirs')
+			local branch_name="${1:-}"
+			mergeModule "${repo_path}" "${branch_name}" 'ours'
 			;;
 
 		'push')
@@ -622,6 +645,32 @@ do
 
 			headerPrintf "Merging submodules with branch named '%s'" "${branch_name}"
 			walkModules 'merge' "${parent_path}" "${repo_path}" "${branch_name}"
+			;;
+
+		'--merge:ours='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			branch_name="${keyword_name:${option_length}}"
+
+			if [ -z "${branch_name}" ]
+			then
+				errorPrintf 'Missing branch name to merge\n'
+			fi
+
+			headerPrintf "Merging submodules with branch named '%s'" "${branch_name}"
+			walkModules 'merge-ours' "${parent_path}" "${repo_path}" "${branch_name}"
+			;;
+
+		'--merge:theirs='*)
+			option_length="$(getOptionLength "${keyword_name}")"
+			branch_name="${keyword_name:${option_length}}"
+
+			if [ -z "${branch_name}" ]
+			then
+				errorPrintf 'Missing branch name to merge\n'
+			fi
+
+			headerPrintf "Merging submodules with branch named '%s'" "${branch_name}"
+			walkModules 'merge-theirs' "${parent_path}" "${repo_path}" "${branch_name}"
 			;;
 
 		'--push')
