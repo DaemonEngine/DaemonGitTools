@@ -191,8 +191,13 @@ pushModule () {
 
 	if [ "${current_branch}" != '' ]
 	then
-		printf2 "Push module path: '%s'\n" "${repo_path}"
-		git push
+		if ! git push --dry-run >/dev/null 2>&1
+		then
+			printf2 "Not pushing foreign module path: '%s'\n" "${repo_path}"
+		else
+			printf2 "Push module path: '%s'\n" "${repo_path}"
+			git push
+		fi
 	fi
 }
 
