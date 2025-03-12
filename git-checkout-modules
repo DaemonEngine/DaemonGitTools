@@ -170,11 +170,11 @@ mergeModule () {
 				do
 					printf2 "Failed to merge branch, opening a shell.\n"
 					printf2 "Please fix the merge and exit this shell to let the task continue.\n"
-					printf2 "1. Run 'git mergetool'\n"
+					printf2 "1. Run: git mergetool\n"
 					printf2 "2. Use (l)ocal to solve possible submodule merge conflicts.\n"
 					printf2 "   Merge possible non-submodule merge conflicts with an editor.\n"
-					printf2 "3. Commit the changes with 'git merge --continue'\n"
-					printf2 "4. Exit the shell with 'exit'\n"
+					printf2 "3. Commit the changes with: git merge --continue\n"
+					printf2 "4. Exit the shell with: exit\n"
 					/usr/bin/env bash
 				done
 			else
