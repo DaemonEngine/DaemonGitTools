@@ -19,9 +19,9 @@ eval "$(setenv)"
 ```
 
 
-## git-checkout-web
+## git-checkout-url
 
-The [`git-checkout-web`](git-checkout-web) helper is a git wrapper to help people checking out pull or merge requests using their web url.
+The [`git-checkout-url`](git-checkout-url) helper is a git wrapper to help people checking out pull or merge requests using their web url.
 
 
 ### Real life examples
@@ -29,7 +29,7 @@ The [`git-checkout-web`](git-checkout-web) helper is a git wrapper to help peopl
 Checkout the current `HEAD` of the `#1597` submodule of the Dæmon engine, without having to add any upstream, and without having to care about it having-been force-pushed since the last time it was checkout out.
 
 ```sh
-git-checkout-web https://github.com/DaemonEngine/Daemon/pull/1597
+git-checkout-url https://github.com/DaemonEngine/Daemon/pull/1597
 ```
 
 
@@ -53,7 +53,7 @@ If there is a merge conflict, the execution will stop and open a shell for the u
 Checkout and pull the for-0.56.0/sync branch of every modules of the Unvanquished repository, merge the master branch, then commit them, then push them:
 
 ```sh
-git-commit-modules --yes --branch=master Unvanquished/
+git-commit-modules --yes --branch=for-0.56.0/sync --merge=master Unvanquished/
 ```
 
 This will generate submodule merge conflicts most of the time, when this happen the execution will stop and open a shell for the user to fix it, the tool will provide instructions on how to fix the submodule merge conflicts. The non-submodules merge conflicts must be solved by the user on a per-case basis. Once the user exits the shell after fixing conflicts, the execution continue.
@@ -99,6 +99,7 @@ The tool can also be used for day-to-day usage, here are examples of things you 
 
 ```sh
 # list all modules recursively:
+git-checkout-modules --list
 ```
 
 ```sh
@@ -219,7 +220,7 @@ Unvanquished/libs/RmlUi
 
 ```
 
-Checkout all modules using `unvanquished/0.51.1` tag when possible and print them:
+Checkout all modules using the `unvanquished/0.51.1` tag when possible and print them:
 
 
 ```sh
@@ -259,7 +260,7 @@ Unvanquished/daemon/libs/recastnavigation  HEAD    unvanquished/0.51.1  6b68934d
 Unvanquished/pkg/unvanquished_src.dpkdir   HEAD    unvanquished/0.51.1  99a8ec6197c0d4c07368b552b35f8e5e004a9420
 ```
 
-Checkout all modules using `responsive` branch when possible:
+Checkout all modules using the `responsive` branch when possible:
 
 ```sh
 git-checkout-modules 'responsive' --print
@@ -340,7 +341,7 @@ Unvanquished/daemon/libs/recastnavigation  master  unvanquished/0.51.1  6b68934d
 Unvanquished/pkg/unvanquished_src.dpkdir   master  undefined            8f2e40b31c182f5e10d67f80252746eb3391ea8e
 ```
 
-Attempt to checkout all modules with `parallax` branch, but this branch does not exist on current module:
+Attempt to checkout all modules with the `parallax` branch, but this branch does not exist on current module:
 
 ```sh
 git-checkout-modules 'parallax'
@@ -349,7 +350,7 @@ git-checkout-modules 'parallax'
 ERROR: Reference does not exist in current module: 'parallax'
 ```
 
-Checkout all sub modules with `parallax` branch, even if this branch does not exist on current module:
+Checkout all sub modules with the `parallax` branch, even if this branch does not exist on current module:
 
 ```sh
 git-checkout-modules --ref='parallax'
@@ -358,7 +359,7 @@ git-checkout-modules --ref='parallax'
 Checkout modules references with 'parallax'
 ```
 
-Checkout all sub modules with `parallax` branch:
+Checkout all sub modules with the `parallax` branch:
 
 ```sh
 git-checkout-modules --sub-ref='parallax' --print
