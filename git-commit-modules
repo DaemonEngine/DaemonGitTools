@@ -1,0 +1,185 @@
+#! /usr/bin/env bash
+
+# Author: Thomas DEBESSE <dev@illwieckz.net>
+# License: ISC
+
+set -u -e -o pipefail
+
+printError () {
+	local format="${1}"; shift
+	printf "ERROR: ${format}\n" "${@}" >&2
+	false
+}
+
+printStatus () {
+	local format="${1}"; shift
+	printf "STATUS: ${format}\n" "${@}" >&2
+}
+
+askForConfirmation () {
+	if "${auto}"
+	then
+		printStatus 'Continuing without asking for confirmation.'
+	else
+		read -p 'ok? [yes]|shell|no ' answer
+		case "${answer}" in
+			[yY]|'yes'|'')
+				;;
+			[sS]|'shell')
+				printStatus 'Opening a shell.'
+
+				/usr/bin/env bash
+
+				printStatus 'Returning to operation.'
+				;;
+			*)
+				printError 'Aborting.'
+				false
+				;;
+		esac
+	fi
+}
+
+getOptionLength () {
+	local option_name="${1}"
+
+	# HACK: '\n' has same length than '='
+	printf -- "${1}" | cut -f1 -d'=' | wc -c
+}
+
+auto='false'
+commit_branch=''
+merge_branch=''
+repository_list=()
+
+for option_name in "${@}"
+do
+	case "${option_name}" in
+		'--yes')
+			auto='true'
+			;;
+		'--branch='*)
+			option_length="$(getOptionLength "${option_name}")"
+			commit_branch="${option_name:${option_length}}"
+			;;
+		'--merge='*)
+			option_length="$(getOptionLength "${option_name}")"
+			merge_branch="${option_name:${option_length}}"
+			;;
+		'--'*)
+			printError 'Unknown option: %s' "${option_name}"
+			;;
+		*)
+			if [ ! -d "${option_name}" ]
+			then
+				printError 'Not a directory: %s' "${option_namey}"
+			fi
+
+			repository_list+=("$(realpath "${option_name}")")
+			;;
+	esac
+	shift
+done
+
+if [ -z "${commit_branch}" ]
+then
+	printError 'Missing branch name.'
+fi
+
+if [ "${#repository_list[@]}" = 0 ]
+then
+	printError 'Missing repository.'
+fi
+
+export TZ='GMT'
+export GIT_AUTHOR_DATE="${GIT_AUTHOR_DATE:-$(date --utc --rfc-3339='s')}"
+export GIT_COMMITTER_DATE="${GIT_AUTHOR_DATE}"
+
+echo "${GIT_AUTHOR_DATE}"
+
+askForConfirmation
+
+workspace_dir="$(pwd)/workspace/unvanquished-commit-modules"
+
+mkdir -pv "${workspace_dir}"
+cd "${workspace_dir}"
+
+if ! [ -d 'git-checkout-modules' ]
+then
+	git clone \
+		'https://gitlab.com/illwieckz/git-checkout-modules.git'
+else
+	git -C 'git-checkout-modules' pull
+fi
+
+if ! [ -d 'Unvanquished' ]
+then
+	git clone --recurse-submodules \
+		'https://github.com/Unvanquished/Unvanquished.git'
+fi
+
+if ! [ -d 'UnvanquishedAssets' ]
+then
+	git clone --recurse-submodules \
+		'https://github.com/UnvanquishedAssets/UnvanquishedAssets.git'
+fi
+
+export PATH="$(realpath 'git-checkout-modules'):${PATH}"
+
+fixRepositoryUrls () {
+	local config_path
+	for config_path in '.git/config' '.git/modules'
+	do
+		if [ -e "${config_path}" ]
+		then
+			find -type f -name 'config' \
+				-exec sed -e 's|https://github.com/|git@github.com:|' -i {} \;
+		fi
+	done
+}
+
+for repository in "${repository_list[@]}"
+do
+	cd "${repository}"
+
+	# Prune all deleted branches, this is needed if 'something' is deleted but 'something/more' has to be pulled.
+	# Clone submodules of every repositories if needed.
+	# Fetch available remote branches references of every repositories.
+	git-checkout-modules --run-after='git remote prune origin'
+	git-checkout-modules --update
+	git-checkout-modules --fetch
+
+	# Clone submodules of every repositories if needed.
+	# Checkout primary branch of every repositories (there may be new ones).
+	# Pull updates for primary branch of every repositories.
+	# FIXME: Parent branch should never be merge branch if child branch is commit branch.
+	git-checkout-modules "${commit_branch}"
+	git-checkout-modules --pull
+
+	git-checkout-modules --print
+
+	askForConfirmation
+
+	case "${merge_branch}" in
+		'')
+			# Commit submodules references of every repositories.
+			git-checkout-modules --commit
+			;;
+		*)
+			# Merge secondary branch of every repositories.
+			git-checkout-modules --merge="${merge_branch}"
+			;;
+	esac
+
+	git-checkout-modules --print
+
+	askForConfirmation
+
+	# Fix urls of every repositories to make push possible.
+	# Push commits to every repositories.
+	fixRepositoryUrls
+	git-checkout-modules --push
+
+	# Checkout primary branch of every repositories.
+	git-checkout-modules "${commit_branch}"
+done
