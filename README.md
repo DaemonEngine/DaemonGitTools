@@ -1,21 +1,63 @@
-git-checkout-modules
-====================
+# Dæmon git tools
 
-The [`git-checkout-modules`](git-checkout-modules) helper is a simple git wrapper to help people to checkout the same branch name across submodules when such branch name exists.
-
-Its first purpose is integration in CI tools for testing branches across multiple repositories.
+This is a set of git tools purposed to ease the management of [Dæmon game engine](https://github.com/DaemonEngine/Daemon), [Unvanquished game](https://github.com/Unvanquished/Unvanquished) and [Unvanquished game data](https://github.com/UnvanquishedAssets/UnvanquishedAssets) repositories with their sets of submodules.
 
 
-Distribution
-------------
+## Distribution
 
-Author: Thomas _“illwieckz”_ Debesse <dev@illwieckz.net>.
+Author: Thomas _“illwieckz”_ Debesse <hidden email="dev [@] illwieckz.net"/>
 
 License: This tool is distributed under the highly permissive [ISC](COPYING.md) license.
 
 
-What it is for
---------------
+## git-checkout-web
+
+The [`git-checkout-web`](git-checkout-web) helper is a git wrapper to help people checking out pull or merge requests.
+
+
+## Real life examples
+
+Checkout the current `HEAD` of the `#1597` submodule of the Dæmon engine, without having to add any upstream, and without having to care about it having-been force-pushed since the last time it was checkout out.
+
+git-checkout-web https://github.com/DaemonEngine/Daemon/pull/1597
+
+
+## git-commit-modules
+
+The [`git-commit-modules`](git-commit-modules) helper is a git wrapper to help people committing submodules.
+
+Its first purpose is to frequently commit the submodules references of repositories with a large and recursive modules tree.
+
+
+### Real life examples
+
+Checkout and pull the master branch of every modules of the Unvanquished repository, then commit them, then push them:
+
+```sh
+git-commit-modules --yes --branch=master Unvanquished/
+```
+
+If there is a merge conflict, the execution will stop and open a shell for the user to fix the merge conflict. The merge conflicts must be solved by the user on a per-case basis. Once the user exits the shell after fixing conflicts, the execution continue.
+
+Checkout and pull the for-0.56.0/sync branch of every modules of the Unvanquished repository, merge the master branch, then commit them, then push them:
+
+```sh
+git-commit-modules --yes --branch=master Unvanquished/
+```
+
+This will generate submodule merge conflicts most of the time, when this happen the execution will stop and open a shell for the user to fix it, the tool will provide instructions on how to fix the submodule merge conflicts. The non-submodules merge conflicts must be solved by the user on a per-case basis. Once the user exits the shell after fixing conflicts, the execution continue.
+
+The `git-commit-modules` tool makes use of the `git-checkout-modules` tool.
+
+
+## git-checkout-modules
+
+The [`git-checkout-modules`](git-checkout-modules) helper is a git wrapper to help people to checkout the same branch name across submodules when such branch name exists.
+
+Its first purpose is integration in CI tools for testing branches across multiple repositories.
+
+
+### What it is for
 
 You can add this command to your CI build script:
 
@@ -35,16 +77,18 @@ Since the data is stored in branch name,
 Since the keyword is a branch suffix, it integrates well with the `contributor/topic` branch name convention, so you would just name your branch `contributor/topic/sync`.
 
 
-Limitations
------------
+### Limitations
 
 It cannot work across forks so contributors must push their work-in-progress branches to your upstream for every module shipping changes for the same branch name.
 
 
-What can be done with
----------------------
+### What can be done with it
 
-The tool can also be used for day-to-day usage, this is example of things you can do with:
+The tool can also be used for day-to-day usage, here are examples of things you can do with it:
+
+```sh
+# list all modules recursively:
+```
 
 ```sh
 # print current modules references
@@ -140,10 +184,32 @@ git-checkout-modules --current-branch:has='/sync$' --revert --print
 ```
 
 
-Real life examples
-------------------
+### Real life examples
 
-Checkout all modules using `unvanquished/0.51.1` tag when possible:
+List all modules recursively:
+
+```sh
+git-checkout-modules --list
+```
+
+```
+Unvanquished
+Unvanquished/daemon
+Unvanquished/daemon/libs/breakpad
+Unvanquished/daemon/libs/crunch
+Unvanquished/daemon/libs/freetype
+Unvanquished/daemon/libs/freetype/subprojects/dlg
+Unvanquished/daemon/libs/googletest
+Unvanquished/daemon/libs/pdcursesmod
+Unvanquished/libs/glm
+Unvanquished/libs/lua
+Unvanquished/libs/recastnavigation
+Unvanquished/libs/RmlUi
+
+```
+
+Checkout all modules using `unvanquished/0.51.1` tag when possible and print them:
+
 
 ```sh
 git-checkout-modules 'unvanquished/0.51.1' --print
@@ -169,6 +235,7 @@ Print modules references
 ```sh
 git-checkout-modules --print 2>/dev/null
 ```
+
 ```
 MODULE                                     BRANCH  TAG                  REFERENCE
 Unvanquished                               HEAD    unvanquished/0.51.1  2b70fb35ddfd7c6807fbdf2f0f968e3e52e69784
