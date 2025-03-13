@@ -1,25 +1,36 @@
 # Dæmon git tools
 
-This is a set of git tools purposed to ease the management of [Dæmon game engine](https://github.com/DaemonEngine/Daemon), [Unvanquished game](https://github.com/Unvanquished/Unvanquished) and [Unvanquished game data](https://github.com/UnvanquishedAssets/UnvanquishedAssets) repositories with their sets of submodules.
+This is a set of git tools purposed to ease the management of repositories of the [Dæmon game engine](https://github.com/DaemonEngine/Daemon) or Dæmon-based games like the [Unvanquished game](https://github.com/Unvanquished/Unvanquished) and [Unvanquished game data](https://github.com/UnvanquishedAssets/UnvanquishedAssets) repositories with their sets of submodules.
 
 
 ## Distribution
 
 Author: Thomas _“illwieckz”_ Debesse <hidden email="dev [@] illwieckz.net"/>
 
-License: This tool is distributed under the highly permissive [ISC](COPYING.md) license.
+License: Those tools are distributed under the highly permissive [ISC](COPYING.md) license.
+
+
+## setenv
+
+This is a simple helper to add all those scripts to your current `PATH`, just do that:
+
+```sh
+eval "$(setenv)"
+```
 
 
 ## git-checkout-web
 
-The [`git-checkout-web`](git-checkout-web) helper is a git wrapper to help people checking out pull or merge requests.
+The [`git-checkout-web`](git-checkout-web) helper is a git wrapper to help people checking out pull or merge requests using their web url.
 
 
-## Real life examples
+### Real life examples
 
 Checkout the current `HEAD` of the `#1597` submodule of the Dæmon engine, without having to add any upstream, and without having to care about it having-been force-pushed since the last time it was checkout out.
 
+```sh
 git-checkout-web https://github.com/DaemonEngine/Daemon/pull/1597
+```
 
 
 ## git-commit-modules
