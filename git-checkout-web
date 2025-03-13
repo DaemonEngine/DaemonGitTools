@@ -1,0 +1,41 @@
+#! /usr/bin/env bash
+
+# Author: Thomas DEBESSE <dev@illwieckz.net>
+# License: ISC
+
+set -u -e
+shopt -s extglob
+
+_error () { echo "ERROR: ${1}" >&2; false; }
+
+url="${1:-}"
+
+[ -n "${url}" ] || _error 'missing url'
+
+case "${url}" in
+	*/-/merge_requests/+([0-9]))
+		remote="${url/\/-\/merge_requests\/*/}.git"
+		ref="merge-requests/${url/*\//}/head"
+		;;
+	*/merge_requests/+([0-9]))
+		remote="${url/\/merge_requests\/*/}.git"
+		ref="merge-requests/${url/*\//}/head"
+		;;
+	*/pull/+([0-9]))
+		remote="${url/\/pull\/*/}.git"
+		ref="pull/${url/*\//}/head"
+		;;
+	*/-/tree/*)
+		remote="${url/\/-\/tree\/*/}.git"
+		ref="${url/*\/-\/tree\//}"
+		;;
+	*/tree/*)
+		remote="${url/\/tree\/*/}.git"
+		ref="${url/*\/tree\//}"
+		;;
+	*)
+		_error "unknown url format"
+esac
+
+git fetch "${remote}" "${ref}"
+git checkout FETCH_HEAD
