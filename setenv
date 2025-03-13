@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+
+# Author: Thomas Debesse <dev@illwieckz.net>
+# License: ISC
+
+printf 'export PATH=%s:%s\n' "${PATH}" "$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
