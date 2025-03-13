@@ -246,6 +246,10 @@ walkModules () {
 	cd "${parent_path}/${repo_path}"
 
 	case "${action_name}" in
+		'list')
+			printf '%s\n' "${repo_path}"
+			;;
+
 		'print')
 			printf '%s %s %s %s\n' "${repo_path}" "$(getBranchName)" "$(getTagName)" "$(getCommitId)"
 			;;
@@ -447,6 +451,10 @@ do
 	IFS="${BKP_IFS}"
 
 	case "${keyword_name}" in
+		'--list')
+			walkModules 'list' "${parent_path}" "${repo_path}"
+			;;
+
 		'--print')
 			headerPrintf 'Print modules references'
 			printModules "${parent_path}" "${repo_path}"
