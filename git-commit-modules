@@ -72,7 +72,7 @@ do
 		*)
 			if [ ! -d "${option_name}" ]
 			then
-				printError 'Not a directory: %s' "${option_namey}"
+				printError 'Not a directory: %s' "${option_name}"
 			fi
 
 			repository_list+=("$(realpath "${option_name}")")
