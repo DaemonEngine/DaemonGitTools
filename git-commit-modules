@@ -99,33 +99,6 @@ echo "${GIT_AUTHOR_DATE}"
 
 askForConfirmation
 
-workspace_dir="$(pwd)/workspace/unvanquished-commit-modules"
-
-mkdir -pv "${workspace_dir}"
-cd "${workspace_dir}"
-
-if ! [ -d 'git-checkout-modules' ]
-then
-	git clone \
-		'https://gitlab.com/illwieckz/git-checkout-modules.git'
-else
-	git -C 'git-checkout-modules' pull
-fi
-
-if ! [ -d 'Unvanquished' ]
-then
-	git clone --recurse-submodules \
-		'https://github.com/Unvanquished/Unvanquished.git'
-fi
-
-if ! [ -d 'UnvanquishedAssets' ]
-then
-	git clone --recurse-submodules \
-		'https://github.com/UnvanquishedAssets/UnvanquishedAssets.git'
-fi
-
-export PATH="$(realpath 'git-checkout-modules'):${PATH}"
-
 fixRepositoryUrls () {
 	local config_path
 	for config_path in '.git/config' '.git/modules'
