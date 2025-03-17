@@ -191,12 +191,28 @@ pushModule () {
 
 	if [ "${current_branch}" != '' ]
 	then
-		if ! git push --dry-run >/dev/null 2>&1
+		local is_ours='true'
+
+		if git push --dry-run >/dev/null 2>&1
+		then
+			printf ''
+		elif [ "${?}" = '128' ]
+		then
+			is_ours='false'
+		fi
+
+		if ! "${is_ours}"
 		then
 			printf2 "Not pushing foreign module path: '%s'\n" "${repo_path}"
 		else
 			printf2 "Push module path: '%s'\n" "${repo_path}"
-			git push
+
+			if ! git push
+			then
+				printf2 "Failed to push branch, opening a shell.\n"
+				printf2 "Please fix the push and exit this shell to let the task continue.\n"
+				/usr/bin/env bash
+			fi
 		fi
 	fi
 }
